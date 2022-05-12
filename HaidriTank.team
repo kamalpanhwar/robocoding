@@ -1,0 +1,7 @@
+#Robocode robot team
+#Thu May 12 11:34:38 PKT 2022
+team.description=\                             A sample robot\n\n             Tracks and fires at the nearest robot it sees
+robocode.version=1.9.4.5
+team.author.name=Jazib Misbah & kamal
+team.version=HaidriTank
+team.members=sample.TrackFire,sample.SittingDuck
