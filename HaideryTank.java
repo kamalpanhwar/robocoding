@@ -5,146 +5,83 @@
  * which accompanies this distribution, and is available at
  * https://robocode.sourceforge.io/license/epl-v10.html
  */
+// Required references
 package sample;
 import robocode.*;
-import java.util.Random;
 import java.awt.*;
-import robocode.util.Utils;
-import static robocode.util.Utils.normalRelativeAngleDegrees;
 
 /**
  * HaiderTank - A tank created by Kamal, Jazib and Misbah.
  * <p>
  * The tank keep moving, when it sees tank fires, and move quickly to different location.
- *
+ * Algorithm
+ * Our Algorithm
+ * Our robot start moving with scanner and when it sees target, it fire on target, after fire it quickly change location. Then again fire on target.
+ * The way it moves has two moments and try to move little right and then again come to locaion with raddical moment.
+ * When it hit wall it should return back
+ * If it got hit we want to it to change its location quickly so other robots can not destroy it easily.
+ * - Tracker still was beating us, but then we manage to dodge him, but random bullets still kill our robot quickly
+ * 
+ * issues:
+ * 1. Energy level , it is hitting with small power, but if it gets closer it can use moreEnergy to hit
+ * 2. Testing with many different bots.
  * @author Jazib Mehmood(original)
  * @author Kamal Uddin Panhwar (contributor)
  * @author Misbah (contributor)
  */
-// Using AdvanceRobot
+
+ // Using AdvanceRobot
 public class HaideryTank extends AdvancedRobot {
-	double dest_x = 0, dest_y = 0;
-	int enemy_x, enemy_y;
-	int count = 0; // Counter to find targeted tank how long
-	double gunTurnAmt; // When searching how much we move tank
-	String trackName; // Name of the robot we're currently tracking
-	private byte moveDirection = 1;
-
-
-	private void move(double x, double y) {
-		dest_x = x;
-		dest_y = y;
-		double cur_x = getX();
-		double cur_y = getY();
-		System.out.println("move (" + cur_x + ", " + cur_y + ") -> (" + x + ", " + y + ")");
-		/* vector from us to there */
-		x -= cur_x;
-		y -= cur_y;
-
-		/* Calculate the angle to the target position */
-		// atan2 converts vector in cartesian coordinates to the angle (in radians) in
-		// polar coordinates
-		double angleToTarget = Math.atan2(x, y);
-
-		/* Calculate the turn required get there */
-		double targetAngle = Utils.normalRelativeAngle(angleToTarget - Math.toRadians(getHeading()));
-		double distance = Math.hypot(x, y);
-
-		/* This is a simple method of performing set front as back */
-		double turnAngle = Math.atan(Math.tan(targetAngle));
-
-		setTurnRight(Math.toDegrees(turnAngle));
-		waitFor(new TurnCompleteCondition(this));
-		if (targetAngle == turnAngle) {
-			//setAhead(distance);
-		} else {
-			//setBack(distance);
-		}
-		waitFor(new MoveCompleteCondition(this));
-	}
-	/**
-	 * TrackFire's run method
-	 */
+	int directionOfTank =1;
 	public void run() {
-		// Set colors
-		setBodyColor(Color.green);
-		setGunColor(Color.yellow);
-		setRadarColor(Color.white);
-		setScanColor(Color.blue);
-		setBulletColor(Color.red);
-		// set radar
-		setAdjustGunForRobotTurn(true);
-		setAdjustRadarForGunTurn(true);
-		Random  r = new Random();
-		double tank_width; 
-		double tank_height;
-		double tank_max_dim;
-		double bf_width;
-		double bf_height;
+        setAdjustRadarForRobotTurn(true);//keep the radar still while we turn
+        setBodyColor(new Color(18, 12, 0));
+        setGunColor(new Color(20, 30, 20));
+        setRadarColor(new Color(20, 20, 50));
+        setScanColor(Color.white);
+        setBulletColor(Color.blue);
+        setAdjustGunForRobotTurn(true); // Keep the gun still when we turn
+        turnRadarRightRadians(Double.POSITIVE_INFINITY);//keep turning radar right
+    }
 
-
-	while (true) {
-		setTurnRadarRight(Double.MAX_VALUE);
-		ahead(100);
-		turnGunRight(360);
-		turnGunRight(360);
-		setTurnRadarRight(49);
-		 tank_width = getWidth();
-		 tank_height = getHeight();
-		 tank_max_dim = Math.max(tank_width, tank_height);
-		 bf_width = getBattleFieldWidth();
-		 bf_height = getBattleFieldHeight();
-		
-			move(tank_max_dim + r.nextDouble(bf_width - tank_max_dim ),
-				 tank_max_dim + r.nextDouble(bf_height - tank_max_dim));
-		}
-	}
-	
-	public void onScannedRobot(ScannedRobotEvent e) {
-		double absoluteBearing = getHeading() + e.getBearing();
-		double bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
-		if (Math.abs(bearingFromGun) <= 3) {
-			turnGunRight(bearingFromGun);
-			if (getGunHeat() == 0) {
-				fire(Math.min(3 - Math.abs(bearingFromGun), getEnergy() - .1));
-				setTurnRight(e.getBearing() + 90);
-				setAhead(1000 * moveDirection);
-			}
-		}
-		else {
-			turnGunRight(bearingFromGun);
-		}
-		if (bearingFromGun == 0) {
-			scan();
-		}
-
-		// Victory dance
-		//turnRight(36000);
-	}
-
-public void onHitWall(HitWallEvent e) {
-	// demonstrate feature of debugging properties on RobotDialog
-	//setDebugProperty("lastHitBy", e.getName() + " with power of bullet " + e.getPower() + " at time " + getTime());
-
-	// show how to remove debugging property
-	setDebugProperty("lastScannedRobot", null);
-
-	// gebugging by painting to battle view
-	Graphics2D g = getGraphics();
-
-	g.setColor(Color.blue);
-	g.drawOval((int) (getX() - 55), (int) (getY() - 55), 110, 110);
-	g.drawOval((int) (getX() - 56), (int) (getY() - 56), 112, 112);
-	g.drawOval((int) (getX() - 59), (int) (getY() - 59), 118, 118);
-	g.drawOval((int) (getX() - 60), (int) (getY() - 60), 120, 120);
-	
-	turnLeft(90 - e.getBearing());
-}
-
-public void onPaint(Graphics2D g) {
-	g.setColor(Color.red);
-	g.drawOval((int) (getX() - 50), (int) (getY() - 50), 100, 100);
-	g.setColor(new Color(0, 0xFF, 0, 30));
-	g.fillOval((int) (getX() - 60), (int) (getY() - 60), 120, 120);
-}
+    /**
+     * onScannedRobot:  If enemy is visible
+     */
+    public void onScannedRobot(ScannedRobotEvent e) {
+        double absoluteBearing=e.getBearingRadians()+getHeadingRadians();//enemies absolute bearing
+        double velocityOfEnemy=e.getVelocity() * Math.sin(e.getHeadingRadians() -absoluteBearing);//enemies later velocity
+        double gunMoveAmount;// How much gun turn
+        setTurnRadarLeftRadians(getRadarTurnRemainingRadians());//lock on the radar
+        if(Math.random()>.9){
+            setMaxVelocity((12*Math.random())+12);
+        }
+		//if the distance between enemy and us is > 150
+        if (e.getDistance() > 150) {
+			
+            gunMoveAmount = robocode.util.Utils.normalRelativeAngle(absoluteBearing- getGunHeadingRadians()+velocityOfEnemy/22);//amount to turn our gun, lead just a little bit
+            setTurnGunRightRadians(gunMoveAmount); //turn our gun
+            setTurnRightRadians(robocode.util.Utils.normalRelativeAngle(absoluteBearing-getHeadingRadians()+velocityOfEnemy/getVelocity()));//drive towards the enemies predicted future location
+            setAhead((e.getDistance() - 140)*directionOfTank);//move forward
+            setFire(3);
+        }
+        else{
+            gunMoveAmount = robocode.util.Utils.normalRelativeAngle(absoluteBearing- getGunHeadingRadians()+velocityOfEnemy/15);//amount to turn our gun, lead just a little bit
+            setTurnGunRightRadians(gunMoveAmount);//turn our gun
+            setTurnLeft(-90-e.getBearing()); //turn perpendicular to the enemy
+            setAhead((e.getDistance() - 140)*directionOfTank);//move forward
+            setFire(3);
+        }
+    }
+    public void onHitWall(HitWallEvent e){
+        directionOfTank=-directionOfTank;
+    }
+    /**
+     * onWin:  Do a victory dance
+     */
+    public void onWin(WinEvent e) {
+        for (int i = 0; i < 50; i++) {
+            turnRight(30);
+            turnLeft(30);
+        }
+    }
 }
